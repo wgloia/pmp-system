@@ -1,5 +1,5 @@
 """
-PMP 备考辅助系统 — Web 前端 (Streamlit)
+PMP 备考辅助系统 — Web 前端 (Streamlit) · Moebius 极繁主义主题
 启动: streamlit run app.py
 """
 import json
@@ -16,15 +16,19 @@ from services import (
     analyze_weak_points, get_review_suggestions,
 )
 from auth import require_login, get_current_user, is_admin, logout
+from moebius_theme import MOEBIUS_CSS
 
 st.set_page_config(
-    page_title="PMP 备考助手",
-    page_icon="📋",
+    page_title="PMP 备考助手 · 知识圣殿",
+    page_icon="✦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# 隐藏 Streamlit 默认英文 UI
+# 注入 Moebius 极繁主义主题
+st.markdown(MOEBIUS_CSS, unsafe_allow_html=True)
+
+# 补充隐藏 Streamlit 默认 UI
 st.markdown("""
 <style>
     footer {visibility: hidden;}
@@ -42,48 +46,53 @@ user_id = user["id"]
 # ═══════════════════════════ 页面实现 ═══════════════════════════
 
 def render_cards_page():
-    st.header("🃏 每日知识卡片")
-    st.caption("基于 WPS 知识库 AI，从 PMP 备考资料中提取核心知识点，生成每日复习卡片")
+    st.header("每日知识卡片")
+    st.caption("从 PMP 备考资料中提炼核心知识点，每日为你呈现智慧结晶")
 
     col1, col2, col3 = st.columns([1, 1.5, 4])
     with col1:
         n = st.selectbox("卡片数量", [3, 5, 10], index=0)
     with col2:
-        st.markdown("&nbsp;")  # 占位补偿 selectbox 的 label 高度
-        gen_btn = st.button("✨ 生成今日卡片")
+        st.markdown("&nbsp;")
+        gen_btn = st.button("✦ 生成今日卡片")
 
     if gen_btn:
-        with st.spinner("正在调用知识库 AI 生成卡片..."):
+        with st.spinner("知识精灵正在为萃取智慧精华..."):
             cards = generate_daily_cards(n)
             saved = save_cards_to_db(cards, user_id)
-            st.success(f"已生成并保存 {saved} 张卡片")
+            st.success(f"已为你准备 {saved} 张知识卡片")
             st.experimental_rerun()
 
-    # 展示今日卡片
     cards = get_today_cards(user_id)
     if not cards:
-        st.info("🃏 今天还没有生成卡片，点击上方按钮生成")
+        st.info("今天还没有生成卡片，点击上方按钮开启今日知识之旅")
         return
 
     st.markdown("---")
     for i, c in enumerate(cards, 1):
         card_id = c["id"]
-        col_card, col_btn = st.columns([20, 1])
+        # Moebius 装饰卡片 HTML
+        card_html = f"""
+        <div class="moebius-card">
+            <div class="card-number">◈ 知识碎片 第 {i} 号 ◈</div>
+            <span class="card-domain">{c['topic']}</span>
+            <div class="card-title">{c['title']}</div>
+            <div class="card-divider">· · · ✦ · · ·</div>
+            <div class="card-content">{c['content']}</div>
+        </div>
+        """
+        col_card, col_btn = st.columns([25, 1])
         with col_card:
-            with st.expander(f"卡片 {i} — {c['topic']}：{c['title']}", expanded=(i == 1)):
-                st.markdown(f"**知识点：** {c['title']}")
-                st.markdown(f"**所属领域：** {c['topic']}")
-                st.markdown(f"**详解：** {c['content']}")
+            st.markdown(card_html, unsafe_allow_html=True)
         with col_btn:
-            st.write("")  # 垂直对齐
-            if st.button("🗑️", key=f"del_card_{card_id}", help="删除此卡片"):
+            if st.button("✧", key=f"del_card_{card_id}", help="删除此卡片"):
                 delete_card(card_id, user_id)
                 st.experimental_rerun()
 
 
 def render_quiz_page():
-    st.header("📝 学习测验")
-    st.caption("基于 WPS 知识库 AI，根据学习内容自动出题，提交后即时反馈正确答案与解析")
+    st.header("试炼之殿")
+    st.caption("AI 出题 · 即时批改 · 错题归库 · 记忆循环")
 
     # 测验配置
     col1, col2, col3 = st.columns(3)
@@ -186,7 +195,7 @@ def render_quiz_page():
 
 
 def render_stats_page():
-    st.header("📊 每周学习统计")
+    st.header("修习录")
 
     stats = get_weekly_stats(user_id)
 
@@ -211,7 +220,7 @@ def render_stats_page():
 
 
 def render_weakpoint_page():
-    st.header("🔍 薄弱知识点分析")
+    st.header("明镜台")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -289,38 +298,37 @@ def render_weakpoint_page():
 
 # ── 侧边栏 ──
 with st.sidebar:
-    st.title("📋 PMP 备考助手")
-    st.caption("基于 WPS 知识库 AI 能力")
+    st.title("知识圣殿")
+    st.caption("PMP 备考辅助系统")
 
-    # 用户信息
-    st.markdown(f"👤 **{user['username']}** ({'管理员' if user['role'] == 'admin' else '普通用户'})")
+    role_text = "圣殿守护者" if user['role'] == 'admin' else "求道者"
+    st.markdown(f"✦ **{user['username']}** · {role_text}")
 
     page = st.radio(
-        "导航菜单",
-        ["🃏 每日知识卡片", "📝 学习测验", "📊 学习统计", "🔍 薄弱点分析"],
+        "✦ 知识圣殿 ✦",
+        ["◈ 每日知识卡片", "◆ 试炼之殿", "◈ 修习录", "◆ 明镜台"],
     )
 
     st.markdown("---")
 
-    if st.button("🚪 退出登录"):
+    if st.button("离开圣殿"):
         logout()
 
-    # 管理员专属：重置数据库
     if is_admin():
         st.markdown("---")
-        st.caption("🔒 管理员操作")
-        if st.button("🗑 重置数据库（清空所有数据）"):
+        st.caption("◆ 圣殿守护者权限")
+        if st.button("重置知识宝库"):
             reset_db()
-            st.success("数据库已重置，所有数据已清空")
+            st.success("知识宝库已清空，等待重新积累智慧")
             st.experimental_rerun()
 
 
 # ── 页面路由 ──
-if page == "🃏 每日知识卡片":
+if "知识卡片" in page:
     render_cards_page()
-elif page == "📝 学习测验":
+elif "试炼" in page:
     render_quiz_page()
-elif page == "📊 学习统计":
+elif "修习" in page:
     render_stats_page()
-elif page == "🔍 薄弱点分析":
+elif "明镜" in page:
     render_weakpoint_page()

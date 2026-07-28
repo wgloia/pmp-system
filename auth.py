@@ -1,59 +1,60 @@
 """
-认证模块 — 登录/登出/会话管理
+认证模块 — 登录/登出/会话管理 · Moebius 极繁主义主题
 """
 import streamlit as st
 from db import verify_login, init_db
+from moebius_theme import MOEBIUS_CSS
 
 
 def require_login() -> dict:
-    """
-    确保当前会话已登录，返回用户信息。
-    未登录时渲染登录界面并阻止后续代码执行。
-    """
-    # 已登录则直接返回
+    """确保当前会话已登录，未登录时渲染登录界面"""
     if "user" in st.session_state and st.session_state.user:
         return st.session_state.user
 
-    # 渲染登录界面
     render_login_page()
-    st.stop()  # 阻止后续页面渲染
-    return {}  # unreachable, satisfies type checker
+    st.stop()
+    return {}
 
 
 def render_login_page():
-    """渲染登录界面"""
-    # 隐藏 Streamlit 默认 UI
+    """渲染 Moebius 风格登录界面"""
+    st.markdown(MOEBIUS_CSS, unsafe_allow_html=True)
     st.markdown("""
     <style>
         footer {visibility: hidden;}
         .stDeployButton {display: none;}
         [data-testid="stSidebar"] {display: none;}
         [data-testid="stToolbar"] {display: none;}
+        /* 登录页特殊：居中卡片 */
+        .stApp {
+            display: flex; align-items: center; justify-content: center;
+        }
     </style>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.title("📋 PMP 备考助手")
-        st.caption("登录后开始学习")
+        st.title("知识圣殿")
+        st.caption("PMP 备考辅助系统")
 
-        username = st.text_input("用户名", placeholder="请输入用户名")
-        password = st.text_input("密码", type="password", placeholder="请输入密码")
+        username = st.text_input("道号", placeholder="请输入用户名")
+        password = st.text_input("密钥", type="password", placeholder="请输入密码")
 
-        if st.button("登录"):
+        if st.button("✦ 进入圣殿"):
             init_db()
             user = verify_login(username, password)
             if user:
                 st.session_state.user = user
                 st.session_state.logged_in = True
-                st.success(f"欢迎回来，{user['username']}！")
+                role = "圣殿守护者" if user['role'] == 'admin' else "求道者"
+                st.success(f"欢迎归来，{role} {user['username']}")
                 st.experimental_rerun()
             else:
-                st.error("用户名或密码错误")
+                st.error("道号或密钥不正确，请重新输入")
 
         st.markdown("---")
-        st.caption("默认账号：admin / admin123（管理员）")
-        st.caption("默认账号：user / user123（普通用户）")
+        st.caption("圣殿守护者：admin / admin123")
+        st.caption("求道者：user / user123")
 
 
 def get_current_user() -> dict:
