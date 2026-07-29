@@ -49,11 +49,12 @@ def render_cards_page():
     st.header("每日知识卡片")
     st.caption("从 PMP 备考资料中提炼核心知识点，每日为你呈现智慧结晶")
 
-    col1, col2, col3 = st.columns([1, 1.5, 4])
+    col1, col2 = st.columns([1, 1.5])
     with col1:
         n = st.selectbox("卡片数量", [3, 5, 10], index=0)
     with col2:
-        st.markdown("&nbsp;")
+        # 用 CSS 将按钮垂直对齐到下拉框底部
+        st.markdown("<div style='height: 1.6rem'></div>", unsafe_allow_html=True)
         gen_btn = st.button("✦ 生成今日卡片")
 
     if gen_btn:
