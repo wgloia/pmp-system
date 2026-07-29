@@ -53,7 +53,8 @@ def render_cards_page():
     with col1:
         n = st.selectbox("卡片数量", [3, 5, 10], index=0)
     with col2:
-        st.markdown("&nbsp;")
+        st.write("")
+        st.write("")
         gen_btn = st.button("✦ 生成今日卡片")
 
     if gen_btn:
