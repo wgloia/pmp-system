@@ -232,6 +232,27 @@ div[data-baseweb="select"] > div {
     border: 1px solid #C4956A !important;
     border-radius: 3px !important;
     font-family: 'Noto Serif SC', serif !important;
+    min-height: unset !important;
+    height: auto !important;
+}
+/* 收缩下拉框内边距，匹配按钮高度 */
+div[data-baseweb="select"] input {
+    padding: 6px 10px !important;
+    font-size: 14px !important;
+    font-family: 'Noto Serif SC', serif !important;
+    color: #2A3B4C !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+}
+/* 下拉框内部的文本容器 */
+div[data-baseweb="select"] [data-testid="stSelectbox"] {
+    min-height: unset !important;
+}
+/* 始终显示的下拉箭头区域 */
+div[data-baseweb="select"] [role="button"] {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 /* ═══════════════ 滑块 ═══════════════ */
