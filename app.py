@@ -59,7 +59,7 @@ def render_cards_page():
 
     if gen_btn:
         with st.spinner("知识精灵正在为萃取智慧精华..."):
-            cards = generate_daily_cards(n)
+            cards = generate_daily_cards(n, user_id)
             saved = save_cards_to_db(cards, user_id)
             st.success(f"已为你准备 {saved} 张知识卡片")
             st.experimental_rerun()

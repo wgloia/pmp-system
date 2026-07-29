@@ -11,11 +11,28 @@ from dal import ask_knowledge_base
 
 # ───────────────── 每日知识卡片 ─────────────────
 
-def generate_daily_cards(n: int = 3) -> list[dict]:
+def generate_daily_cards(n: int = 3, user_id: int = 1) -> list[dict]:
     """
-    生成 N 张每日知识卡片。
-    调用 WPS 知识库 AI 问答，从 PDF 资料中提取核心知识点。
+    生成 N 张每日知识卡片，自动避开今日已有内容。
     """
+    # 读取今日已生成的卡片标题
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = get_db()
+    existing = conn.execute(
+        "SELECT title FROM cards WHERE user_id=? AND date=? ORDER BY id",
+        (user_id, today),
+    ).fetchall()
+    conn.close()
+    avoid_list = [r["title"] for r in existing]
+
+    avoid_hint = ""
+    if avoid_list:
+        avoid_hint = (
+            f"\n\n【重要】以下知识点今天已经生成过，请严格避免重复：\n"
+            + "\n".join(f"- {t}" for t in avoid_list)
+            + "\n请从资料中选取完全不同的知识点。"
+        )
+
     prompt = (
         f"请从PMP备考资料中，随机选择{n}个重要的核心知识点（必须来自不同知识领域），"
         "为每个知识点生成一张知识卡片。\n\n"
@@ -26,6 +43,7 @@ def generate_daily_cards(n: int = 3) -> list[dict]:
         "---\n\n"
         f"知识领域必须是以下之一：{'、'.join(PMP_DOMAINS)}\n"
         "确保内容基于学习资料中的真实知识点，不要编造。"
+        f"{avoid_hint}"
     )
     raw = ask_knowledge_base(prompt, deep_think=True)
     return _parse_cards(raw, n)
