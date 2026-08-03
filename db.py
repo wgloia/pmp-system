@@ -137,6 +137,20 @@ def init_db():
             created_at  TEXT DEFAULT (datetime('now','localtime'))
         );
         CREATE INDEX IF NOT EXISTS idx_study_user_date ON study_log(user_id, date);
+
+        -- 知识笔记本
+        CREATE TABLE IF NOT EXISTS knowledge_notes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL REFERENCES users(id),
+            date        TEXT    NOT NULL,
+            topic       TEXT    NOT NULL,
+            title       TEXT    NOT NULL,
+            content     TEXT    NOT NULL,
+            tags        TEXT,
+            created_at  TEXT    DEFAULT (datetime('now','localtime'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_notes_user_date ON knowledge_notes(user_id, date);
+        CREATE INDEX IF NOT EXISTS idx_notes_topic ON knowledge_notes(user_id, topic);
     """)
 
     # 迁移：为旧表添加 user_id 列（新增时忽略已存在错误）

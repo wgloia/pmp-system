@@ -712,3 +712,65 @@ def get_review_suggestions(weak_points: list[dict]) -> str:
         "回答简洁有条理，每个领域不超过3个要点。"
     )
     return ask_knowledge_base(prompt, deep_think=True)
+
+
+# ───────────────── 知识笔记本 ─────────────────
+
+def add_note(user_id: int, topic: str, title: str, content: str) -> int:
+    """新增一条知识笔记"""
+    conn = get_db()
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn.execute(
+        "INSERT INTO knowledge_notes (user_id, date, topic, title, content) VALUES (?,?,?,?,?)",
+        (user_id, today, topic, title, content),
+    )
+    note_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.commit()
+    conn.close()
+    return note_id
+
+
+def get_notes(user_id: int, topic: str = "", search: str = "", limit: int = 20) -> list[dict]:
+    """查询知识笔记，支持按领域和关键词筛选"""
+    conn = get_db()
+    if search:
+        rows = conn.execute(
+            "SELECT * FROM knowledge_notes WHERE user_id=? AND (title LIKE ? OR content LIKE ?)"
+            " ORDER BY id DESC LIMIT ?",
+            (user_id, f"%{search}%", f"%{search}%", limit),
+        ).fetchall()
+    elif topic:
+        rows = conn.execute(
+            "SELECT * FROM knowledge_notes WHERE user_id=? AND topic=? ORDER BY id DESC LIMIT ?",
+            (user_id, topic, limit),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM knowledge_notes WHERE user_id=? ORDER BY id DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def delete_note(note_id: int, user_id: int) -> bool:
+    """删除一条笔记"""
+    conn = get_db()
+    conn.execute("DELETE FROM knowledge_notes WHERE id=? AND user_id=?", (note_id, user_id))
+    conn.commit()
+    deleted = conn.total_changes > 0
+    conn.close()
+    return deleted
+
+
+def update_note(note_id: int, user_id: int, topic: str, title: str, content: str) -> bool:
+    """更新一条笔记"""
+    conn = get_db()
+    conn.execute(
+        "UPDATE knowledge_notes SET topic=?, title=?, content=? WHERE id=? AND user_id=?",
+        (topic, title, content, note_id, user_id),
+    )
+    conn.commit()
+    updated = conn.total_changes > 0
+    conn.close()
+    return updated

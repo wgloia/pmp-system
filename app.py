@@ -14,6 +14,7 @@ from services import (
     get_weekly_stats,
     get_all_domain_accuracy,
     analyze_weak_points, get_review_suggestions,
+    add_note, get_notes, delete_note, update_note,
 )
 from auth import require_login, get_current_user, is_admin, logout
 from moebius_theme import MOEBIUS_CSS
@@ -297,6 +298,66 @@ def render_weakpoint_page():
                 st.markdown(suggestion)
 
 
+def render_notes_page():
+    st.header("知识手札")
+    st.caption("记录学习中的关键知识点，构建个人知识体系")
+
+    # 搜索与筛选
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        search = st.text_input("搜索笔记", placeholder="输入关键词搜索标题或内容...")
+    with col2:
+        filter_topic = st.selectbox("筛选领域", ["全部"] + PMP_DOMAINS, index=0)
+
+    # 新建笔记
+    with st.expander("✦ 记录新知识", expanded=False):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            new_topic = st.selectbox("所属领域", PMP_DOMAINS, key="note_topic")
+        with col_b:
+            new_title = st.text_input("知识点标题", key="note_title", placeholder="简洁概括")
+        new_content = st.text_area("详细内容", key="note_content", height=120,
+                                   placeholder="记录关键概念、公式、记忆要点...")
+        if st.button("保存笔记"):
+            if new_title.strip() and new_content.strip():
+                add_note(user_id, new_topic, new_title.strip(), new_content.strip())
+                st.success("知识已保存 ✦")
+                st.experimental_rerun()
+            else:
+                st.warning("标题和内容不能为空")
+
+    st.markdown("---")
+
+    # 查询逻辑
+    topic_filter = "" if filter_topic == "全部" else filter_topic
+    notes = get_notes(user_id, topic=topic_filter, search=search.strip())
+
+    if not notes:
+        st.info("暂无笔记，点击上方「记录新知识」开始书写")
+        return
+
+    st.caption(f"共 {len(notes)} 条笔记")
+
+    for note in notes:
+        # Moebius 卡片风格
+        note_html = f"""
+        <div class="moebius-card">
+            <div class="card-number">◈ {note['date']} ◈</div>
+            <span class="card-domain">{note['topic']}</span>
+            <div class="card-title">{note['title']}</div>
+            <div class="card-divider">· · · ✦ · · ·</div>
+            <div class="card-content">{note['content']}</div>
+        </div>
+        """
+        col_note, col_del = st.columns([25, 1])
+        with col_note:
+            st.markdown(note_html, unsafe_allow_html=True)
+        with col_del:
+            if st.button("✧", key=f"del_note_{note['id']}", help="删除此笔记"):
+                delete_note(note["id"], user_id)
+                st.experimental_rerun()
+
+
 # ── 侧边栏 ──
 with st.sidebar:
     st.title("知识圣殿")
@@ -307,7 +368,7 @@ with st.sidebar:
 
     page = st.radio(
         "✦ 知识圣殿 ✦",
-        ["◈ 每日知识卡片", "◆ 试炼之殿", "◈ 修习录", "◆ 明镜台"],
+        ["◈ 每日知识卡片", "◆ 试炼之殿", "◈ 修习录", "◆ 明镜台", "✦ 知识手札"],
     )
 
     st.markdown("---")
@@ -333,3 +394,5 @@ elif "修习" in page:
     render_stats_page()
 elif "明镜" in page:
     render_weakpoint_page()
+elif "手札" in page:
+    render_notes_page()
